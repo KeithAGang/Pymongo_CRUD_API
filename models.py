@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
+from database import book_collection, DESCENDING
 
 class Todo(BaseModel):
     title: str
@@ -12,8 +13,11 @@ class Todo(BaseModel):
     
 class Book(BaseModel):
     title: str
-    Year: int
+    author: str
+    publication_year: int
+    genre: str
     description: str
+
     
 class Sort(BaseModel):
     algorithm: str

@@ -1,6 +1,8 @@
-from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi import FastAPI, APIRouter, HTTPException, File, UploadFile, Query
+from fastapi.staticfiles import StaticFiles
+from database import collection, book_collection, DESCENDING
+import shutil
 from fastapi.middleware.cors import CORSMiddleware 
-from database import collection, book_collection
 from random import randint
 from schemas import *
 from models import *
@@ -42,8 +44,17 @@ async def create_task(new_task: Todo):
     
 @router.post("/add_book")
 async def add_book(new_book: Book):
+    new_book = dict(new_book)
     try:
-        resp = book_collection.insert_one(dict(new_book))
+        book_data ={
+            "id": (book_collection.find_one(sort=[("id", DESCENDING)])["id"] + 1),
+            "title": new_book["title"],
+            "author": new_book["author"],
+            "publication_year": new_book["publication_year"],
+            "genre": new_book["genre"],
+            "description": new_book["description"]
+        }
+        resp = book_collection.insert_one(book_data)
         return "Success"
     except Exception as e:
         return HTTPException(status_code=500, detail=f"Some error occured: {e}")
@@ -59,9 +70,12 @@ async def fill_lib():
     else:
         return all_books(books)
     
-@router.post("/sort")
-async def sort_data(sort_details: Sort):
-    sort_details = dict(sort_details)
+@router.get("/sort")
+async def sort_data(
+    algorithm: str = Query(..., description="The sorting algorithm to use"),
+    order: str = Query(..., description="The desired arrangement order of the data"),
+    sort_by: str = Query(..., description="The column to sort the data by")
+):
     sorting_algorithms = {
         "bubble sort": bubble_sort,
         "selection sort": selection_sort,
@@ -70,27 +84,30 @@ async def sort_data(sort_details: Sort):
         "quick sort": quick_sort,
     }
     
-    if (sort_details["algorithm"] not in sorting_algorithms):
+    if (algorithm not in sorting_algorithms):
         return f"Enter A Valid Sorting Algorithm Like: {list(sorting_algorithms.keys())}"
     
   
         
     books = list(book_collection.find())
-    response = sorting_algorithms[sort_details["algorithm"]](books, param=sort_details["sort_by"], order=sort_details["order"])
+    response = sorting_algorithms[algorithm](books, param=sort_by, order=order)
     
     
     return {
-        "algorithm": sort_details["algorithm"],
-        "Sort order": sort_details["order"],
-        "Filter": sort_details["sort_by"],
+        "algorithm": algorithm,
+        "Sort order": order,
+        "Filter": sort_by,
         "Complexities": response["complexities"],  
         "items": len(all_books(response["data"])),  
         "Data": all_books(response["data"])
     }
     
-@router.post("/search")
-async def search_data(search_details: Search):
-    search_details = dict(search_details)
+@router.get("/search")
+async def search_data(
+    algorithm: str = Query(..., description="The search algorithm to use"),
+    search_by: str = Query(..., description="The field to search by"),
+    search_value: str = Query(..., description="The value to search for")
+):
     data = list(book_collection.find())
     
     sorting_algorithms = [
@@ -106,30 +123,45 @@ async def search_data(search_details: Search):
         "binary search": binary_search,
         "hash table search": hash_table_search,
         "jump search": jump_search,
-        "interpolation search": interpolation_search
+        "interpolation search": interpolation_search,
     }
     
-    num = randint(0,4)
+    num = randint(0, 4)
     
-    if (search_details["algorithm"] not in searching_algorithms):
-        return f"Please Enter A Valid Sorting Algorith like: {list(searching_algorithms.keys())}"
+    if algorithm not in searching_algorithms:
+        return f"Please Enter A Valid Sorting Algorithm like: {list(searching_algorithms.keys())}"
     
-    if ((search_details["search_by"] == "id") | (search_details["search_by"] == "publication_year")):
-        search_details["search_value"] = int(search_details["search_value"])
+    if search_by in ["id", "publication_year"]:
+        search_value = int(search_value)
     
-    sorted_data = sorting_algorithms[num](data, param=search_details["search_by"])
+    sorted_data = sorting_algorithms[num](data, param=search_by)
     
-    response = searching_algorithms[search_details["algorithm"]](list(sorted_data["data"]), search_details["search_value"], param=search_details["search_by"])
+    response = searching_algorithms[algorithm](list(sorted_data["data"]), search_value, param=search_by)
     
-    if (not response):
+    if not response:
         return {"data": "No Books Found"}
     
     return {
-        "algorithm": search_details["algorithm"],
+        "algorithm": algorithm,
         "results": len(response),
         "Data": all_books(response)
-        }
-    # return list(response)
+    }
+    
+@router.post("/addPic")
+async def upload(file: UploadFile = File(...)):
+    try:
+        last_book_id = book_collection.find_one(sort=[("id", DESCENDING)])["id"]
         
+        file.filename = f"{(last_book_id )}.jpg"
+        
+        with open(f"covers/{file.filename}", "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        return {"filename": file.filename}
+    except Exception as e:
+        print(e)
+        return {"message": "There was an error uploading the file"}
+        
+
+app.mount("/covers", StaticFiles(directory="covers"), name="covers")
 
 app.include_router(router)

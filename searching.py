@@ -95,3 +95,4 @@ def interpolation_search(arr, search_value, param):
             result.append(arr[mid])
             return result
     return result
+
