@@ -17,6 +17,7 @@ class Book(BaseModel):
     publication_year: int
     genre: str
     description: str
+    has_Nobel_Prize: bool
 
     
 class Sort(BaseModel):

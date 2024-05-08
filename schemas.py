@@ -13,9 +13,10 @@ def individual_book(book):
     return {
         "id": book["id"],
         "title": book["title"],
-        "author": book["title"],
+        "author": book["author"],
         "publication_year": book["publication_year"],
         "genre": book["genre"],
+        "has_Nobel_Prize": book["has_Nobel_Prize"],
         "description": book["description"]
     }
 

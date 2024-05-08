@@ -52,12 +52,29 @@ async def add_book(new_book: Book):
             "author": new_book["author"],
             "publication_year": new_book["publication_year"],
             "genre": new_book["genre"],
-            "description": new_book["description"]
+            "has_Nobel_Prize": new_book["has_Nobel_Prize"],
+            "description": new_book["description"],
         }
         resp = book_collection.insert_one(book_data)
         return "Success"
     except Exception as e:
         return HTTPException(status_code=500, detail=f"Some error occured: {e}")
+   
+@router.get("/books")
+async def get_books(
+    query: str = Query(..., description="The query parameter")
+):
+    
+    if query == "not_alph":
+        query = {'title': {'$not': {'$regex': '^[a-zA-Z]'}}}
+        books = book_collection.find(query)
+    elif match := re.match(r'^[A-Z]$', query):
+        query = {'title': {'$regex': f'^{match.group(0)}'}}
+        books = book_collection.find(query)
+    else:
+        return "Enter a valid query"
+    return all_books(books)
+    
         
 @router.get("/library")
 async def fill_lib():
