@@ -1,12 +1,15 @@
+import base64
+import shutil
 from fastapi import FastAPI, APIRouter, HTTPException, File, UploadFile, Query
 from fastapi.staticfiles import StaticFiles
-from database import collection, book_collection, DESCENDING
-import shutil
 from fastapi.middleware.cors import CORSMiddleware 
 from random import randint
+
+from database import collection, book_collection, DESCENDING
 from schemas import *
 from models import *
 from library import *
+from dataPlots import *
 from sorting import *
 from searching import *
 
@@ -178,6 +181,25 @@ async def upload(file: UploadFile = File(...)):
         print(e)
         return {"message": "There was an error uploading the file"}
         
+
+@router.get("/plots")
+async def data_plots(
+    plot: str = Query(..., description="The Plotted Data The User Wants To See.")
+):
+    
+    to_plot = {
+        "letters": plot_starting_letters,
+        "years":    plot_release_years,
+        "nobel_prize": plot_nobel_prize
+    }
+    
+    image = await to_plot[plot](book_collection)
+    res_image = base64.b64encode(image.getvalue()).decode('utf-8')
+    
+    return {
+        "plot": plot,
+        "image": res_image
+    }
 
 app.mount("/covers", StaticFiles(directory="covers"), name="covers")
 
