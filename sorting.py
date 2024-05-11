@@ -120,13 +120,23 @@ def insertion_sort(arr, param, order="asc"):
         j = i - 1
         
         if order == "asc":
-            while j >= 0 and (isinstance(key[param], list) and (str(key[param][0]).isdigit() and int(key[param][0]) < int(arr[j][param][0]) or not str(key[param][0]).isdigit() and str(key[param][0]) < str(arr[j][param][0])) or not isinstance(key[param], list) and (str(key[param]).isdigit() and int(key[param]) < int(arr[j][param]) or not str(key[param]).isdigit() and str(key[param]) < str(arr[j][param]))):
-                arr[j + 1] = arr[j]
-                j -= 1
+            if param in ["id", "publication_year"]:
+                while j >= 0 and (int(key[param]) < int(arr[j][param])):
+                    arr[j + 1] = arr[j]
+                    j -= 1
+            else:
+                while j >= 0 and (str(key[param]) < str(arr[j][param])):
+                    arr[j + 1] = arr[j]
+                    j -= 1
         else:
-            while j >= 0 and (isinstance(key[param], list) and (str(key[param][0]).isdigit() and int(key[param][0]) > int(arr[j][param][0]) or not str(key[param][0]).isdigit() and str(key[param][0]) > str(arr[j][param][0])) or not isinstance(key[param], list) and (str(key[param]).isdigit() and int(key[param]) > int(arr[j][param]) or not str(key[param]).isdigit() and str(key[param]) > str(arr[j][param]))):
-                arr[j + 1] = arr[j]
-                j -= 1
+            if param in ["id", "publication_year"]:
+                while j >= 0 and (int(key[param]) > int(arr[j][param])):
+                    arr[j + 1] = arr[j]
+                    j -= 1
+            else:
+                while j >= 0 and (str(key[param]) > str(arr[j][param])):
+                    arr[j + 1] = arr[j]
+                    j -= 1
         
         arr[j + 1] = key
     
@@ -138,30 +148,26 @@ def insertion_sort(arr, param, order="asc"):
 def quick_sort(arr, param, order='asc'):
     def partition(arr, low, high, param):
         i = (low-1)
-        if isinstance(arr[high][param], list):
-            if str(arr[high][param][0]).isdigit():
-                pivot = int(arr[high][param][0])
-            else:
-                pivot = str(arr[high][param][0])
+        if param in ["id", "publication_year"]:
+            pivot = int(arr[high][param]) if isinstance(arr[high][param], int) else str(arr[high][param])
         else:
-            if str(arr[high][param]).isdigit():
-                pivot = int(arr[high][param])
-            else:
-                pivot = str(arr[high][param])
+            pivot = str(arr[high][param])
+        
         for j in range(low, high):
-            if isinstance(arr[j][param], list):
-                if str(arr[j][param][0]).isdigit() and int(arr[j][param][0]) <= pivot:
-                    i = i+1
+            if param in ["id", "publication_year"]:
+                if isinstance(arr[j][param], int):
+                    if arr[j][param] <= pivot:
+                        i += 1
+                        arr[i], arr[j] = arr[j], arr[i]
+                else:
+                    if str(arr[j][param]) <= pivot:
+                        i += 1
+                        arr[i], arr[j] = arr[j], arr[i]
+            else:
+                if str(arr[j][param]) <= pivot:
+                    i += 1
                     arr[i], arr[j] = arr[j], arr[i]
-                elif not str(arr[j][param][0]).isdigit() and str(arr[j][param][0]) <= pivot:
-                    i = i+1
-                    arr[i], arr[j] = arr[j], arr[i]
-            elif str(arr[j][param]).isdigit() and int(arr[j][param]) <= pivot:
-                i = i+1
-                arr[i], arr[j] = arr[j], arr[i]
-            elif not str(arr[j][param]).isdigit() and str(arr[j][param]) <= pivot:
-                i = i+1
-                arr[i], arr[j] = arr[j], arr[i]
+        
         arr[i+1], arr[high] = arr[high], arr[i+1]
         return (i+1)
 
