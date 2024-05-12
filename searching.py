@@ -39,7 +39,17 @@ def binary_search(arr, search_value, param):
 
 def hash_table_search(arr, search_value, param):
     hash_table = {item[param]: item for item in arr}
-    return [item for key, item in hash_table.items() if isinstance(key, list) and search_value in key]
+    
+    results = []
+    for key, item in hash_table.items():
+        if isinstance(key, list):
+            if search_value in key:
+                results.append(item)
+        else:
+            if search_value == key:
+                results.append(item)
+    
+    return results
 
 def jump_search(arr, search_value, param):
     result = []

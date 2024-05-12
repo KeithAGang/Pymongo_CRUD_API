@@ -119,31 +119,28 @@ def insertion_sort(arr, param, order="asc"):
         key = arr[i]
         j = i - 1
         
-        if order == "asc":
-            if param in ["id", "publication_year"]:
-                while j >= 0 and (int(key[param]) < int(arr[j][param])):
-                    arr[j + 1] = arr[j]
-                    j -= 1
-            else:
-                while j >= 0 and (str(key[param]) < str(arr[j][param])):
-                    arr[j + 1] = arr[j]
-                    j -= 1
+        if param in ["id", "publication_year"]:
+            while j >= 0 and (int(key[param]) < int(arr[j][param])):
+                arr[j + 1] = arr[j]
+                j -= 1
         else:
-            if param in ["id", "publication_year"]:
-                while j >= 0 and (int(key[param]) > int(arr[j][param])):
-                    arr[j + 1] = arr[j]
-                    j -= 1
-            else:
-                while j >= 0 and (str(key[param]) > str(arr[j][param])):
-                    arr[j + 1] = arr[j]
-                    j -= 1
+            while j >= 0 and (str(key[param]) < str(arr[j][param])):
+                arr[j + 1] = arr[j]
+                j -= 1
         
         arr[j + 1] = key
     
     if order == "desc":
-        return {"data": arr[::-1], "complexities": "Time Complexity: O(n^2), Space Complexity: O(1)"}
+        data = arr[::-1]
     else:
-        return {"data": arr, "complexities": "Time Complexity: O(n^2), Space Complexity: O(1)"}
+        data = arr
+        
+    response = {
+        "data": data,
+        "complexities": "Time Complexity: O(n^2), Space Complexity: O(1)"
+    }
+    
+    return response
 
 def quick_sort(arr, param, order='asc'):
     def partition(arr, low, high, param):

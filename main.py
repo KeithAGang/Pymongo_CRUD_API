@@ -1,6 +1,7 @@
 import base64
 import shutil
-from fastapi import FastAPI, APIRouter, HTTPException, File, UploadFile, Query
+import os
+from fastapi import FastAPI, APIRouter, HTTPException, File, UploadFile, Query, status
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware 
 from random import randint
@@ -15,6 +16,10 @@ from searching import *
 
 app = FastAPI()
 router = APIRouter()
+
+covers_folder = "covers"
+if not os.path.exists(covers_folder):
+    os.makedirs(covers_folder)
 
 origins = [
     "http://localhost:5173",
@@ -159,7 +164,7 @@ async def search_data(
     response = searching_algorithms[algorithm](list(sorted_data["data"]), search_value, param=search_by)
     
     if not response:
-        return {"data": "No Books Found"}
+        raise HTTPException(status_code=404, detail="No Books Found")
     
     return {
         "algorithm": algorithm,
@@ -171,15 +176,22 @@ async def search_data(
 async def upload(file: UploadFile = File(...)):
     try:
         last_book_id = book_collection.find_one(sort=[("id", DESCENDING)])["id"]
+        file.filename = f"{(last_book_id)}.jpg"
         
-        file.filename = f"{(last_book_id )}.jpg"
+        # Check if the 'covers' folder exists, if not, create it
+        covers_folder = "covers"
+        if not os.path.exists(covers_folder):
+            os.makedirs(covers_folder)
         
-        with open(f"covers/{file.filename}", "wb") as buffer:
+        with open(os.path.join(covers_folder, file.filename), "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
+        
         return {"filename": file.filename}
+    except FileNotFoundError:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="The 'covers' folder does not exist and could not be created.")
     except Exception as e:
         print(e)
-        return {"message": "There was an error uploading the file"}
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="There was an error uploading the file.")
         
 
 @router.get("/plots")
@@ -200,6 +212,17 @@ async def data_plots(
         "plot": plot,
         "image": res_image
     }
+
+@router.delete("/delete")
+async def delete_book(
+    id: int = Query(..., description="The ID of the Book to Delete.")
+):
+    result = book_collection.delete_one({"id": id})
+    
+    
+    covers_folder = "/covers"
+    
+    os.remove(f"{covers_folder}/{id}.jpg")
 
 app.mount("/covers", StaticFiles(directory="covers"), name="covers")
 
